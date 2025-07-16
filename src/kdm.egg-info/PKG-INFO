@@ -1,0 +1,67 @@
+Metadata-Version: 2.4
+Name: kdm
+Version: 1.0.0
+Summary: Probabilistic deep learning with kernel Density Matrices
+Author-email: "Fabio A. González" <fagonzalezo@unal.edu.co>
+License: GNU LGPL 2.1
+Project-URL: Homepage, https://github.com/fagonzalezo/kdm.git
+Project-URL: Repository, https://github.com/fagonzalezo/kdm.git
+Keywords: machine learning,density matrices,deep learning
+Classifier: Framework :: Keras
+Classifier: Programming Language :: Python :: 3
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: numpy
+Requires-Dist: scipy
+Requires-Dist: scikit-learn
+Requires-Dist: tensorflow-probability>=0.24
+Requires-Dist: tensorflow>=2.16
+Requires-Dist: tf-keras>=2.16
+Provides-Extra: faiss
+Requires-Dist: faiss-cpu>=1.8.0; extra == "faiss"
+Dynamic: license-file
+
+#  Kernel Density Matrices
+
+Kernel Density Matrices (KDMs) are a generalization of density matrices used in quantum mechanics to represent the probabilistic state of a quantum system. KDMs provide a simpler yet effective mechanism for representing joint probability distributions of both continuous and discrete random variables. The framework allows for the construction of differentiable models for density estimation, inference, and sampling, enabling integration into end-to-end deep neural models. 
+
+# Getting Started
+
+You can install the most recent version of the library with
+
+```zsh
+pip install git+https://github.com/fagonzalezo/kdm.git
+```
+
+Memory based models require additionally the installation of the `faiss` library. You can install it with
+
+```zsh
+pip install faiss-cpu
+```
+
+Check our [examples](https://github.com/fagonzalezo/kdm/tree/master/examples) to see what you can do!
+## Paper
+
+> **Kernel Density Matrices for Probabilistic Deep Learning**
+> 
+> Fabio A. González, Raúl Ramos-Pollán, Joseph A. Gallego-Mejia
+> 
+> https://arxiv.org/abs/2305.18204
+> 
+> <p align="justify"><b>Abstract:</b> <i>This paper introduces a novel approach to probabilistic deep learning, kernel density matrices, which provide a simpler yet effective mechanism for representing joint probability distributions of both continuous and discrete random variables. In quantum mechanics, a density matrix is the most general way to describe the state of a quantum system. This work extends the concept of density matrices by allowing them to be defined in a reproducing kernel Hilbert space. This abstraction allows the construction of differentiable models for density estimation, inference, and sampling, and enables their integration into end-to-end deep neural models. In doing so, we provide a versatile representation of marginal and joint probability distributions that allows us to develop a differentiable, compositional, and reversible inference procedure that covers a wide range of machine learning tasks, including density estimation, discriminative learning, and generative modeling. The broad applicability of the framework is illustrated by two examples: an image classification model that can be naturally transformed into a conditional generative model, and a model for learning with label proportions that demonstrates the framework's ability to deal with uncertainty in the training samples.</i></p>
+
+## Citation
+
+If you find this code useful in your research, please consider citing:
+
+```
+@misc{gonzalez2023quantum,
+      title={Kernel Density Matrices for Probabilistic Deep Learning}, 
+      author={Fabio A. González and Raúl Ramos-Pollán and Joseph A. Gallego-Mejia},
+      year={2023},
+      eprint={2305.18204},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
+}
+```

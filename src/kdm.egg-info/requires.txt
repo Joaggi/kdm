@@ -1,0 +1,9 @@
+numpy
+scipy
+scikit-learn
+tensorflow-probability>=0.24
+tensorflow>=2.16
+tf-keras>=2.16
+
+[faiss]
+faiss-cpu>=1.8.0
