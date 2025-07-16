@@ -4,10 +4,28 @@ Kernel Density Matrices (KDMs) are a generalization of density matrices used in 
 
 # Getting Started
 
+You can create a new 
+
+```
+mamba env create -f environment.yml
+
+mamba activate kdm
+```
+
+To test the notebooks, you can install the library in a terminal with editable mode
+
+```
+pip install -e .
+```
+
+
+# If you are using outside of development, you can do the same but using the following command:
+
+
 You can install the most recent version of the library with
 
 ```zsh
-pip install git+https://github.com/fagonzalezo/kdm.git
+pip install git+https://github.com/joaggi/kdm.git
 ```
 
 Memory based models require additionally the installation of the `faiss` library. You can install it with
@@ -16,7 +34,7 @@ Memory based models require additionally the installation of the `faiss` library
 pip install faiss-cpu
 ```
 
-Check our [examples](https://github.com/fagonzalezo/kdm/tree/master/examples) to see what you can do!
+Check our [examples](https://github.com/joaggi/kdm/tree/master/examples) to see what you can do!
 ## Paper
 
 > **Kernel Density Matrices for Probabilistic Deep Learning**
