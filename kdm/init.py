@@ -12,7 +12,7 @@ import numpy as np
 import torch
 from sklearn.neighbors import NearestNeighbors
 
-__all__ = ["init_kdm_layer", "init_kdm_proj_layer"]
+__all__ = ["init_kdm_layer", "init_kdm_proj_layer", "set_kernel_scale"]
 
 
 def _sigma_from_knn(points: np.ndarray, sigma_mult: float = 1.0) -> float:
@@ -20,6 +20,26 @@ def _sigma_from_knn(points: np.ndarray, sigma_mult: float = 1.0) -> float:
     nn_model.fit(points)
     distances, _ = nn_model.kneighbors(points)
     return float(np.mean(distances[:, 2]) * sigma_mult)
+
+
+def set_kernel_scale(kernel, value: float) -> None:
+    """Set a kernel's scale parameter: `sigma` for RBF, `c` for the robust
+    kernels. Wrappers exposing `base_kernel` (e.g. `SchoenbergKernelLayer`)
+    are unwrapped first.
+
+    Raises instead of silently creating a new attribute on kernels that
+    have no scale parameter.
+    """
+    while hasattr(kernel, "base_kernel"):
+        kernel = kernel.base_kernel
+    if hasattr(kernel, "sigma"):
+        kernel.sigma = value
+    elif hasattr(kernel, "c"):
+        kernel.c = value
+    else:
+        raise TypeError(
+            f"{type(kernel).__name__} has no scale parameter (sigma or c) to initialize."
+        )
 
 
 def init_kdm_layer(
@@ -36,15 +56,16 @@ def init_kdm_layer(
                encoded_x and samples_y).
         encoded_x: (n_comp, dim_x) array / tensor of support points.
         samples_y: (n_comp, dim_y) array / tensor of target components.
-        init_sigma: if True, set layer.kernel.sigma from the mean distance
-                    to the 2nd-nearest neighbor of encoded_x.
+        init_sigma: if True, set the kernel scale (`sigma`, or `c` for the
+                    robust kernels) from the mean distance to the
+                    2nd-nearest neighbor of encoded_x.
         sigma_mult: scalar multiplier applied to the computed sigma.
     """
     encoded_x_t = torch.as_tensor(encoded_x)
     samples_y_t = torch.as_tensor(samples_y)
     if init_sigma:
         points = encoded_x_t.detach().cpu().numpy()
-        layer.kernel.sigma = _sigma_from_knn(points, sigma_mult)
+        set_kernel_scale(layer.kernel, _sigma_from_knn(points, sigma_mult))
     with torch.no_grad():
         layer.c_x.copy_(encoded_x_t.to(layer.c_x))
         layer.c_y.copy_(samples_y_t.to(layer.c_y))
@@ -61,7 +82,7 @@ def init_kdm_proj_layer(
     samples_x_t = torch.as_tensor(samples_x)
     if init_sigma:
         points = samples_x_t.detach().cpu().numpy()
-        layer.kernel.sigma = _sigma_from_knn(points, sigma_mult)
+        set_kernel_scale(layer.kernel, _sigma_from_knn(points, sigma_mult))
     with torch.no_grad():
         layer.c_x.copy_(samples_x_t.to(layer.c_x))
         layer.c_w.fill_(1.0 / layer.n_comp)

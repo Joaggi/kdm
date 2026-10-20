@@ -1,5 +1,8 @@
+from typing import Optional
+
 import torch.nn as nn
 
+from ..base import Kernel
 from ..layers import KDMLayer, RBFKernelLayer
 from ..utils import dm2discrete, pure2dm
 
@@ -16,6 +19,10 @@ class KDMClassModel(nn.Module):
 
     Trainability of KDM prototypes is controlled by `x_train`, `y_train`,
     and `w_train`.
+
+    `kernel` is the kernel layer applied to the encoded input. If None, an
+    `RBFKernelLayer` is built from `sigma`, `sigma_trainable` and
+    `min_sigma`; those arguments are ignored when a kernel is passed.
     """
 
     def __init__(
@@ -30,16 +37,19 @@ class KDMClassModel(nn.Module):
         x_train: bool = True,
         y_train: bool = True,
         w_train: bool = True,
+        kernel: Optional[Kernel] = None,
     ):
         super().__init__()
         self.encoded_size = encoded_size
         self.dim_y = dim_y
         self.n_comp = n_comp
         self.encoder = encoder
-        self.kernel = RBFKernelLayer(
-            sigma=sigma, dim=encoded_size,
-            trainable=sigma_trainable, min_sigma=min_sigma,
-        )
+        if kernel is None:
+            kernel = RBFKernelLayer(
+                sigma=sigma, dim=encoded_size,
+                trainable=sigma_trainable, min_sigma=min_sigma,
+            )
+        self.kernel = kernel
         self.kdm = KDMLayer(
             kernel=self.kernel,
             dim_x=encoded_size,
