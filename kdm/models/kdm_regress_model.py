@@ -1,7 +1,10 @@
+from typing import Optional
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from ..base import Kernel
 from ..layers import KDMLayer, RBFKernelLayer
 from ..layers.rbf_kernel_layer import _softplus_inv
 from ..utils import dm_rbf_expectation, dm_rbf_variance, pure2dm
@@ -13,6 +16,11 @@ class KDMRegressModel(nn.Module):
     `forward(x)` returns the output KDM rho_y; use `predict_reg(x)` to get
     the predictive mean and variance. Training loops compute the NLL via
     `utils.dm_rbf_loglik(y_true, rho_y, sigma_y)`.
+
+    `kernel` is the kernel layer applied to the encoded input. If None, an
+    `RBFKernelLayer` is built from `sigma_x`, `sigma_x_trainable` and
+    `min_sigma_x`; those arguments are ignored when a kernel is passed. The
+    output side always uses an RBF with `sigma_y`.
     """
 
     def __init__(
@@ -30,6 +38,7 @@ class KDMRegressModel(nn.Module):
         w_train: bool = True,
         sigma_x_trainable: bool = True,
         sigma_y_trainable: bool = True,
+        kernel: Optional[Kernel] = None,
     ):
         super().__init__()
         self.encoded_size = encoded_size
@@ -37,10 +46,12 @@ class KDMRegressModel(nn.Module):
         self.n_comp = n_comp
         self.encoder = encoder
         self.min_sigma_y = min_sigma_y
-        self.kernel = RBFKernelLayer(
-            sigma=sigma_x, dim=encoded_size,
-            trainable=sigma_x_trainable, min_sigma=min_sigma_x,
-        )
+        if kernel is None:
+            kernel = RBFKernelLayer(
+                sigma=sigma_x, dim=encoded_size,
+                trainable=sigma_x_trainable, min_sigma=min_sigma_x,
+            )
+        self.kernel = kernel
         self.kdm = KDMLayer(
             kernel=self.kernel,
             dim_x=encoded_size,
@@ -92,4 +103,7 @@ class KDMRegressModel(nn.Module):
         return y_exp, y_var
 
     def get_sigmas(self):
-        return float(self.kernel.sigma.detach()), float(self.sigma_y.detach())
+        # sigma_x is None for kernels without a `sigma` parameter.
+        sigma_x = getattr(self.kernel, "sigma", None)
+        sigma_x = None if sigma_x is None else float(sigma_x.detach())
+        return sigma_x, float(self.sigma_y.detach())
