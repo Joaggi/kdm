@@ -62,12 +62,9 @@ class RBFKernelLayer(Kernel):
         Returns:
             K: tensor of shape (bs, n, m)
         """
-        # (bs, n, d) x (d, m) -> (bs, n, m); torch.matmul broadcasts
-        AB = torch.matmul(A, B.transpose(-1, -2))
-        A_norm = (A ** 2).sum(dim=-1, keepdim=True)  # (bs, n, 1)
-        B_norm = (B ** 2).sum(dim=-1).unsqueeze(0).unsqueeze(0)  # (1, 1, m)
-        dist2 = (A_norm + B_norm - 2.0 * AB).clamp(min=0.0)
-        return torch.exp(-dist2 / (2.0 * self.sigma ** 2))
+        B = B.unsqueeze(0).expand(A.shape[0], -1, -1)  # (bs, m, d)
+        dist = torch.cdist(A, B, compute_mode="donot_use_mm_for_euclid_dist")  # (bs, n, m)
+        return torch.exp(-dist ** 2 / (2.0 * self.sigma ** 2))
 
     def log_weight(self):
         return -self.dim * torch.log(self.sigma + 1e-12) - self.dim * math.log(math.pi) / 2
@@ -88,8 +85,5 @@ class MemRBFKernelLayer(RBFKernelLayer):
         Returns:
             K: tensor of shape (bs, n, m)
         """
-        AB = torch.matmul(A, B.transpose(1, 2))  # (bs, n, m)
-        A_norm = (A ** 2).sum(dim=-1, keepdim=True)          # (bs, n, 1)
-        B_norm = (B ** 2).sum(dim=-1).unsqueeze(1)           # (bs, 1, m)
-        dist2 = (A_norm + B_norm - 2.0 * AB).clamp(min=0.0)
-        return torch.exp(-dist2 / (2.0 * self.sigma ** 2))
+        dist = torch.cdist(A, B, compute_mode="donot_use_mm_for_euclid_dist")  # (bs, n, m)
+        return torch.exp(-dist ** 2 / (2.0 * self.sigma ** 2))
