@@ -23,7 +23,7 @@ def _sigma_from_knn(points: np.ndarray, sigma_mult: float = 1.0) -> float:
 
 
 def set_kernel_scale(kernel, value: float) -> None:
-    """Set a kernel's scale parameter: `sigma` for RBF or `c`. Wrappers exposing `base_kernel` (e.g. `SchoenbergKernelLayer`)
+    """Set a kernel's scale parameter: `sigma` for RBF or `c`. Wrappers exposing `base_kernel`
     are unwrapped first.
 
     Raises instead of silently creating a new attribute on kernels that
