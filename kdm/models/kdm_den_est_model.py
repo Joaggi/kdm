@@ -1,9 +1,11 @@
 import math
+from typing import Optional
 
 import torch
 import torch.nn as nn
 from torch.distributions import Categorical, Independent, MixtureSameFamily, Normal
 
+from ..base import Kernel
 from ..layers import KDMProjLayer, RBFKernelLayer
 
 
@@ -12,6 +14,11 @@ class KDMDenEstModel(nn.Module):
 
     `forward(x)` returns per-sample log-density under the learned KDM. The
     training loop minimizes `-forward(x).mean()`.
+
+    `kernel` is the kernel layer used by the KDM. If None, an
+    `RBFKernelLayer` is built from `sigma` and `trainable_sigma`; those
+    arguments are ignored when a kernel is passed. `get_distrib` needs the
+    RBF kernel.
     """
 
     def __init__(
@@ -20,13 +27,16 @@ class KDMDenEstModel(nn.Module):
         sigma: float,
         n_comp: int,
         trainable_sigma: bool = True,
+        kernel: Optional[Kernel] = None,
     ):
         super().__init__()
         self.dim_x = dim_x
         self.n_comp = n_comp
-        self.kernel = RBFKernelLayer(
-            sigma=sigma, dim=dim_x, trainable=trainable_sigma
-        )
+        if kernel is None:
+            kernel = RBFKernelLayer(
+                sigma=sigma, dim=dim_x, trainable=trainable_sigma
+            )
+        self.kernel = kernel
         self.kdmproj = KDMProjLayer(self.kernel, dim_x=dim_x, n_comp=n_comp)
         self.eps = 1e-7
 
@@ -34,6 +44,8 @@ class KDMDenEstModel(nn.Module):
         return torch.log(self.kdmproj(x) + self.eps) + self.kernel.log_weight()
 
     def get_distrib(self) -> MixtureSameFamily:
+        if not isinstance(self.kernel, RBFKernelLayer):
+            raise TypeError("get_distrib is only defined for RBFKernelLayer.")
         comp_w = self.kdmproj.c_w.detach().abs() + self.eps
         comp_w = comp_w / comp_w.sum()
         scale = self.kernel.sigma.detach() / math.sqrt(2.0)

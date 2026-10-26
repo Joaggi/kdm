@@ -1,5 +1,8 @@
+from typing import Optional
+
 import torch.nn as nn
 
+from ..base import Kernel
 from ..layers import KDMLayer, RBFKernelLayer
 from ..utils import dm2discrete, pure2dm
 
@@ -7,7 +10,8 @@ from ..utils import dm2discrete, pure2dm
 class KDMSequentialClassModel(nn.Module):
     """Chained KDM layers for classification.
 
-    The first layer uses an RBF kernel on the encoded input; subsequent
+    The first layer uses `kernel` on the encoded input (an RBF built from
+    `sigma` if None); subsequent
     layers are configured via a list of dicts with keys
     `kernel`, `dim_x`, `dim_y`, `n_comp`.
     """
@@ -20,14 +24,17 @@ class KDMSequentialClassModel(nn.Module):
         n_comp: int,
         sigma: float = 0.1,
         sequence=None,
+        kernel: Optional[Kernel] = None,
     ):
         super().__init__()
         self.encoded_size = encoded_size
         self.dim_y = dim_y
         self.n_comp = n_comp
         self.encoder = encoder
+        if kernel is None:
+            kernel = RBFKernelLayer(sigma=sigma, dim=encoded_size, trainable=True)
         first = KDMLayer(
-            kernel=RBFKernelLayer(sigma=sigma, dim=encoded_size, trainable=True),
+            kernel=kernel,
             dim_x=encoded_size,
             dim_y=dim_y,
             n_comp=n_comp,

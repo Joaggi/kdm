@@ -6,6 +6,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
+from ...base import Kernel
+from ...init import set_kernel_scale
 from ...utils import dm2comp, pure2dm
 from ..mem import MemKDMClassModel
 
@@ -28,6 +30,7 @@ class MemKDMClassModelWrapper:
         n_comp: int,
         index_type: str = "Flat",
         sigma: float = 0.1,
+        kernel: Optional[Kernel] = None,
     ):
         self.dim_y = dim_y
         self.encoded_size = encoded_size
@@ -43,6 +46,7 @@ class MemKDMClassModelWrapper:
             dim_y=dim_y,
             n_comp=n_comp,
             sigma=sigma,
+            kernel=kernel,
         )
 
     # ------------------------------------------------------------------ utils
@@ -76,7 +80,7 @@ class MemKDMClassModelWrapper:
         neigh = np.take(self.samples_x_enc, I, axis=0)
         dists = np.linalg.norm(samples[:, None, :] - neigh, axis=-1)
         sigma = float(np.median(dists[:, 1:]) * mult)
-        self.model.kernel.sigma = sigma
+        set_kernel_scale(self.model.kernel, sigma)
         return sigma
 
     # ------------------------------------------------------------------ predict
